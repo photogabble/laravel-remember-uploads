@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Middleware;
+namespace Photogabble\LaravelRememberUploads\Middleware;
 
 use Closure;
 
