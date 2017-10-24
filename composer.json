@@ -1,5 +1,5 @@
 {
-    "name": "photogabble/laravel-remember-uploads',
+    "name": "photogabble/laravel-remember-uploads",
     "type": "library",
     "description": "A simple helper for remembering uploaded files during form validation.",
     "keywords": [
