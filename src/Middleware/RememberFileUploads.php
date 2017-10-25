@@ -7,6 +7,9 @@ use Closure;
 class RememberFileUploads
 {
 
+    /**
+     * @var \Illuminate\Session\Store
+     */
     private $session;
 
     /**
@@ -40,6 +43,7 @@ class RememberFileUploads
      *
      * @param \Illuminate\Http\Request $request
      * @param array $fields
+     * @throws \Exception
      */
     private function remember($request, array $fields)
     {
@@ -48,15 +52,29 @@ class RememberFileUploads
 
         /**
          * @var \Symfony\Component\HttpFoundation\File\UploadedFile $file
+         * @todo there is likely a bug here when $file is an array and not an UploadedFile... write unit test
          */
-        foreach ($files as $file) {
-            $details = [
-                'tmpPathName' => $file->getPathname(),
-                'originalName' => $file->getClientOriginalName()
+        foreach ($files as $key => $file) {
+            $storagePath = storage_path('app' . DIRECTORY_SEPARATOR . 'tmp-image-uploads');
+
+            if (! file_exists($storagePath)) {
+                if (!mkdir($storagePath)) {
+                    throw new \Exception('Could not create directory ['. $storagePath .'].');
+                }
+            }
+
+            $storagePathName = $storagePath . DIRECTORY_SEPARATOR . $file->getFilename();
+
+            copy($file->getPathname(), $storagePathName);
+
+            $stored[$key] = [
+                'tmpPathName' => $storagePathName,
+                'originalName' => $file->getClientOriginalName(),
+                'mimeType' => $file->getMimeType(),
+                'size' => $file->getSize()
             ];
-            array_push($stored, $details);
         }
-        
-        $this->session->put('remembered.files', $stored);
+
+        $this->session->flash('_remembered_files', $stored);
     }
 }
