@@ -3,9 +3,8 @@
 namespace Photogabble\LaravelRememberUploads\Tests;
 
 use Illuminate\Contracts\View\Factory;
-use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
-use \Illuminate\Session\Store;
+use Illuminate\Session\Store;
 use Illuminate\View\View;
 use Orchestra\Testbench\TestCase;
 use Photogabble\LaravelRememberUploads\RememberUploadsServiceProvider;
@@ -147,6 +146,39 @@ class UploadTest extends TestCase
         $this->assertArrayHasKey('rememberedFiles', $viewData);
         $this->assertInstanceOf(FileBag::class, $viewData['rememberedFiles']);
         $this->assertEquals(0, $viewData['rememberedFiles']->count());
+    }
+
+    public function testHelper()
+    {
+        /** @var Store $session */
+        $session = $this->app->make(Store::class);
+
+        $remembered = $session->get('_remembered_files', []);
+        $this->assertEquals([], $remembered);
+
+        $stub = __DIR__.DIRECTORY_SEPARATOR.'stubs'.DIRECTORY_SEPARATOR.'test.jpg';
+        $name = str_random(8).'.jpg';
+        $path = sys_get_temp_dir().DIRECTORY_SEPARATOR.$name;
+
+        copy($stub, $path);
+
+        $file = new UploadedFile($path, $name, filesize($path), 'image/jpeg', null, true);
+
+        $response = $this->call('POST', 'test', [], [], ['img' => $file], ['Accept' => 'application/json']);
+        $this->assertTrue($response->isOk());
+        $session->ageFlashData();
+
+        $fileBag = oldFile();
+        $this->assertInstanceOf(FileBag::class, $fileBag);
+        $this->assertInstanceOf(\Symfony\Component\HttpFoundation\File\UploadedFile::class, $fileBag->get('img'));
+
+        $oldFile = oldFile('img');
+        $this->assertInstanceOf(\Symfony\Component\HttpFoundation\File\UploadedFile::class, $oldFile);
+
+        $this->assertNull(oldFile('test'));
+        $this->assertTrue(oldFile('test', true));
+        $this->assertFalse(oldFile('test', false));
+
     }
 
     private function mockView()
