@@ -3,10 +3,15 @@
 namespace Photogabble\LaravelRememberUploads\ViewComposers;
 
 use Illuminate\View\View;
-use App\Repositories\UserRepository;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\HttpFoundation\FileBag;
 
 class RememberedFilesComposer
 {
+
+    /**
+     * @var \Illuminate\Session\Store
+     */
     private $session;
 
     /**
@@ -29,9 +34,9 @@ class RememberedFilesComposer
     {
         $fileBag = new FileBag();
 
-        if ($files = $this->session->get('remembered.files', null)) {
+        if ($files = $this->session->get('_remembered_files', null)) {
             foreach($files as $key => $file) {
-                $fileBag->set($key, new UploadedFile($file['tmpPathName'], $file['originalName']));
+                $fileBag->set($key, new UploadedFile($file['tmpPathName'], $file['originalName'], $file['mimeType'], $file['size']));
             }
         }
 
