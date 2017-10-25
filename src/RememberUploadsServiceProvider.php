@@ -16,6 +16,7 @@ class ComposerServiceProvider extends ServiceProvider
     {
         // Using class based composers...
         View::composer(
+            '*',
             'Photogabble\LaravelRememberUploads\ViewComposers\RememberedFilesComposer'
         );
     }
