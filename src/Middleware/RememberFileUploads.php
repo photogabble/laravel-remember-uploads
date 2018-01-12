@@ -99,6 +99,13 @@ class RememberFileUploads
                 'mimeType' => $cached['mimeType'],
                 'size' => $cached['size']
             ];
+            
+            $request->files->set($key, new \Photogabble\LaravelRememberUploads\RememberedFile(
+                $storagePathName,
+                $cached['originalName'],
+                $cached['mimeType'],
+                $cached['size']
+            ));
         }
 
         $this->session->flash('_remembered_files', $stored);
