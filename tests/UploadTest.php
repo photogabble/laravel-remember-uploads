@@ -4,6 +4,7 @@ namespace Photogabble\LaravelRememberUploads\Tests;
 
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Session\Store;
 use Illuminate\View\View;
@@ -105,6 +106,46 @@ class UploadTest extends TestCase
         $this->assertArrayHasKey('rememberedFiles', $viewData);
         $this->assertInstanceOf(FileBag::class, $viewData['rememberedFiles']);
         $this->assertEquals(0, $viewData['rememberedFiles']->count());
+    }
+
+    /**
+     * This test is in place as an example to be referenced by the README.md
+     */
+    public function testFileControllerExample()
+    {
+        /**
+         * @var \Illuminate\Routing\Router $router
+         */
+        $router = $this->app->make('router');
+
+        $router->post('test-request', function (Request $request) {
+            $file = oldFile('img', $request->file('img'));
+            return ['ok' => true, 'filename' => $file->getFilename(), 'pathname' => $file->getPathname()];
+        })->middleware('remember.files');
+
+        /** @var Store $session */
+        $session = $this->app->make(Store::class);
+
+
+        // Copy Stub File
+        $stub = __DIR__.DIRECTORY_SEPARATOR.'stubs'.DIRECTORY_SEPARATOR.'test.jpg';
+        $name = str_random(8).'.jpg';
+        $path = sys_get_temp_dir().DIRECTORY_SEPARATOR.$name;
+
+        copy($stub, $path);
+
+        // Post the File the first time
+        $file = new UploadedFile($path, $name, filesize($path), 'image/jpeg', null, true);
+        $this->call('POST', 'test-request', [], [], ['img' => $file], ['Accept' => 'application/json']);
+        $session->ageFlashData();
+
+        // Post the _rememberedFiles value
+        $response = $this->call('POST', 'test-request', ['_rememberedFiles' => ['img' => oldFile('img')->getFilename()]], [], [], ['Accept' => 'application/json']);
+        $content  = json_decode($response->content());
+
+        $this->assertSame($file->getFilename(), $content->filename);
+        $this->assertFileExists($content->pathname);
+        $this->assertSame(sha1_file($file->getPathname()), sha1_file($content->pathname));
     }
 
     /**
