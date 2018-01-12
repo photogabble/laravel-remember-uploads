@@ -6,11 +6,15 @@
   <a href="LICENSE"><img src="https://poser.pugx.org/photogabble/laravel-remember-uploads/license.svg" alt="License"></a>
 </p>
 
+## About this package
+
+This middleware allows the application to capture uploaded files and temporarily store them just-in-case the form validation redirects back otherwise loosing the files before your controler could process them.
+
 ## Install
 
 Add to your project with compoer via `composer require photogabble/laravel-remember-uploads`.
 
-Next add the package service provider to your providers configuration in Laravel.
+To enable the package you will need to add its service provider to your app providers configuration in Laravel.
 
 ```php
 'providers' => [
