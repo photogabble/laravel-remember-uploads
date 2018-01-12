@@ -1,11 +1,12 @@
 {
   "name": "photogabble/laravel-remember-uploads",
   "type": "library",
-  "description": "A simple helper for remembering uploaded files during form validation.",
+  "description": "Laravel middleware and helper for remembering uploaded files during form validation.",
   "keywords": [
     "laravel",
     "file",
-    "validation"
+    "validation",
+    "middleware"
   ],
   "support": {
     "issues": "https://github.com/photogabble/laravel-remember-uploads/issues",
