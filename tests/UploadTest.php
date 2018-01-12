@@ -3,6 +3,7 @@
 namespace Photogabble\LaravelRememberUploads\Tests;
 
 use Illuminate\Contracts\View\Factory;
+use Illuminate\Filesystem\Filesystem;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Session\Store;
 use Illuminate\View\View;
@@ -34,6 +35,14 @@ class UploadTest extends TestCase
         $router->post('test', function () {
             return ['ok' => true];
         })->middleware('remember.files');
+    }
+
+    public function tearDown()
+    {
+        $file = new Filesystem();
+        $this->assertTrue($file->cleanDirectory(storage_path('app' . DIRECTORY_SEPARATOR . 'tmp-image-uploads')));
+        $this->assertTrue($file->deleteDirectory(storage_path('app' . DIRECTORY_SEPARATOR . 'tmp-image-uploads')));
+        parent::tearDown();
     }
 
     /**
