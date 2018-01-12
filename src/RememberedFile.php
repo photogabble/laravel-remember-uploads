@@ -12,7 +12,7 @@ class RememberedFile extends \Symfony\Component\HttpFoundation\File\UploadedFile
      */
     public function isValid()
     {
-        $isOk = UPLOAD_ERR_OK === $this->error;
+        $isOk = UPLOAD_ERR_OK === $this->getError();
 
         return $isOk; // @todo check that pathname is within the expected storage directory
         //return $this->test ? $isOk : $isOk && is_uploaded_file($this->getPathname());
