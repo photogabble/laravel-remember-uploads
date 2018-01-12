@@ -1,6 +1,10 @@
-# laravel-remember-uploads
+<h1 align="center">Laravel Remember Uploads</h1>
+<p align="center"><em>Middleware Package</em></p>
 
-**[Please Note]**: This package is currently a work in progress and has been initially developed for Laravel 5.4.
+<p align="center">
+  <a href="https://packagist.org/packages/photogabble/laravel-remember-uploads"><img src="https://poser.pugx.org/photogabble/laravel-remember-uploads/v/stable.svg" alt="Latest Stable Version"></a>
+  <a href="LICENSE"><img src="https://poser.pugx.org/photogabble/laravel-remember-uploads/license.svg" alt="License"></a>
+</p>
 
 ## Install
 
