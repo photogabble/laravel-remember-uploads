@@ -5,6 +5,7 @@ namespace Photogabble\LaravelRememberUploads\Middleware;
 use Closure;
 use Illuminate\Cache\CacheManager;
 use Illuminate\Session\Store;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 class RememberFileUploads
 {
@@ -14,6 +15,9 @@ class RememberFileUploads
      */
     private $session;
 
+    /**
+     * @var CacheManager
+     */
     private $cache;
 
     /**
@@ -54,6 +58,7 @@ class RememberFileUploads
      * @param  \Closure $next
      * @param  array $fields
      * @return mixed
+     * @throws \Exception
      */
     public function handle($request, Closure $next, $fields = ['*'])
     {
@@ -99,13 +104,6 @@ class RememberFileUploads
                 'mimeType' => $cached['mimeType'],
                 'size' => $cached['size']
             ];
-            
-            $request->files->set($key, new \Photogabble\LaravelRememberUploads\RememberedFile(
-                $storagePathName,
-                $cached['originalName'],
-                $cached['mimeType'],
-                $cached['size']
-            ));
         }
 
         $this->session->flash('_remembered_files', $stored);
@@ -124,7 +122,7 @@ class RememberFileUploads
         $stored = [];
 
         /**
-         * @var \Symfony\Component\HttpFoundation\File\UploadedFile $file
+         * @var UploadedFile $file
          * @todo there is likely a bug here when $file is an array and not an UploadedFile... write unit test
          */
         foreach ($files as $key => $file) {
