@@ -8,15 +8,25 @@ use Illuminate\Routing\Controller;
 
 class ValidationTestController extends Controller
 {
-
     use ValidatesRequests;
 
     public function fileUpload(Request $request)
     {
         $this->validate($request, [
-            'img' => 'required_without:_rememberedFiles[img]|mimes:jpeg'
+            'img' => 'required_without:_rememberedFiles.img|mimes:jpeg'
         ]);
 
-        $n =1;
+        $file = oldFile('img', $request->file('img'));
+
+        return json_encode([
+            'name' => $file->getFilename()
+        ]);
+    }
+
+    public function failedFileUpload(Request $request)
+    {
+        $this->validate($request, [
+            'img' => 'required_without:_rememberedFiles.img|mimes:png'
+        ]);
     }
 }
