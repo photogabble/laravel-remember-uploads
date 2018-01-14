@@ -9,9 +9,14 @@ if (! function_exists('oldFile')) {
     function oldFile($key = null, $default = null) {
         /** @var Illuminate\Session\Store $session */
         $session = app('session');
+
+        /** @var \Illuminate\Support\ViewErrorBag $errors */
+        $errors = $session->get('errors', new \Illuminate\Support\MessageBag());
+
         $fileBag = new Symfony\Component\HttpFoundation\FileBag();
         if ($files = $session->get('_remembered_files', null)) {
             foreach($files as $k => $f) {
+                if ($errors->has($k)) { continue; }
                 $fileBag->set(
                     $k,
                     new Illuminate\Http\UploadedFile(

@@ -207,7 +207,8 @@ class UploadTest extends TestCase
     }
 
     /**
-     * Test written for issue #2
+     * Test written for issue #2.
+     * Tests to check that validation being recommended in the README actually works.
      * @see https://github.com/photogabble/laravel-remember-uploads/issues/2
      */
     public function testValidationPasses()
@@ -227,17 +228,59 @@ class UploadTest extends TestCase
         /** @var Store $session */
         $session = $this->app->make(Store::class);
 
+        // Test controller validation is working.
         $response = $this->call('POST', 'test-validation', [], [], [], ['Accept' => 'application/json']);
         $this->assertFalse($response->isOk());
 
+        // Test controller based oldFile is working.
         $file = $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'stubs'.DIRECTORY_SEPARATOR.'test.jpg');
-
         $response = $this->call('POST', 'test-validation', [], [], ['img' => $file], ['Accept' => 'application/json']);
         $this->assertTrue($response->isOk());
+        $content = json_decode($response->getContent());
+        $this->assertEquals($file->getClientOriginalName(), $content->name);
 
         $session->ageFlashData();
+        $session->flush();
+
+        // Test controller _rememberedFiles is working.
+        $response = $this->call('POST', 'test-validation', ['_rememberedFiles'=> ['img' => $file->getClientOriginalName()]], [], [], ['Accept' => 'application/json']);
+        $this->assertTrue($response->isOk());
+        $content = json_decode($response->getContent());
+        $this->assertEquals($file->getClientOriginalName(), $content->name);
     }
 
+    /**
+     * Test written for issue #2
+     * @see https://github.com/photogabble/laravel-remember-uploads/issues/2
+     */
+    public function testFilesForgottenWhenValidationFails()
+    {
+        /**
+         * @var \Illuminate\Routing\Router $router
+         */
+        $router = $this->app->make('router');
+        $router->post(
+            'test-validation',
+            [
+                'middleware' => ['remember.files'],
+                'uses' => '\Photogabble\LaravelRememberUploads\Tests\Stubs\ValidationTestController@failedFileUpload'
+            ]
+        );
+
+        $file = $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'stubs'.DIRECTORY_SEPARATOR.'test.jpg');
+        $response = $this->call('POST', 'test-validation', [], [], ['img' => $file], ['Accept' => 'application/json']);
+        $this->assertFalse($response->isOk());
+
+        $remembered = oldFile('img');
+        $this->assertNull($remembered);
+    }
+
+    /**
+     * Mock an uploaded file from a given src file.
+     *
+     * @param string $stub
+     * @return UploadedFile
+     */
     private function mockUploadedFile($stub) {
         $name = str_random(8).'.jpg';
         $path = sys_get_temp_dir().DIRECTORY_SEPARATOR.$name;
