@@ -1,4 +1,11 @@
 <?php
+if (! function_exists('clearRememberedFiles')) {
+    function clearRememberedFiles() {
+        /** @var Illuminate\Session\Store $session */
+        $session = app('session');
+        $session->forget('_remembered_files');
+    }
+}
 
 if (! function_exists('oldFile')) {
     /**
