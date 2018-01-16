@@ -16,7 +16,7 @@ class ValidationTestController extends Controller
             'img' => 'required_without:_rememberedFiles.img|mimes:jpeg'
         ]);
 
-        $file = oldFile('img', $request->file('img'));
+        $file = rememberedFile('img', $request->file('img'));
 
         return json_encode([
             'name' => $file->getFilename()

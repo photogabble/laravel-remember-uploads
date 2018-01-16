@@ -113,7 +113,7 @@ class UploadTest extends TestCase
         $router = $this->app->make('router');
 
         $router->post('test-request', function (Request $request) {
-            $file = oldFile('img', $request->file('img'));
+            $file = rememberedFile('img', $request->file('img'));
             return ['ok' => true, 'filename' => $file->getFilename(), 'pathname' => $file->getPathname()];
         })->middleware('remember.files');
 
@@ -127,7 +127,7 @@ class UploadTest extends TestCase
         $session->ageFlashData();
 
         // Post the _rememberedFiles value
-        $response = $this->call('POST', 'test-request', ['_rememberedFiles' => ['img' => oldFile('img')->getFilename()]], [], [], ['Accept' => 'application/json']);
+        $response = $this->call('POST', 'test-request', ['_rememberedFiles' => ['img' => rememberedFile('img')->getFilename()]], [], [], ['Accept' => 'application/json']);
         $content  = json_decode($response->content());
 
         $this->assertSame($file->getFilename(), $content->filename);
@@ -193,16 +193,16 @@ class UploadTest extends TestCase
         $this->assertTrue($response->isOk());
         $session->ageFlashData();
 
-        $fileBag = oldFile();
+        $fileBag = rememberedFile();
         $this->assertInstanceOf(FileBag::class, $fileBag);
         $this->assertInstanceOf(\Symfony\Component\HttpFoundation\File\UploadedFile::class, $fileBag->get('img'));
 
-        $oldFile = oldFile('img');
-        $this->assertInstanceOf(\Symfony\Component\HttpFoundation\File\UploadedFile::class, $oldFile);
+        $rememberedFile = rememberedFile('img');
+        $this->assertInstanceOf(\Symfony\Component\HttpFoundation\File\UploadedFile::class, $rememberedFile);
 
-        $this->assertNull(oldFile('test'));
-        $this->assertTrue(oldFile('test', true));
-        $this->assertFalse(oldFile('test', false));
+        $this->assertNull(rememberedFile('test'));
+        $this->assertTrue(rememberedFile('test', true));
+        $this->assertFalse(rememberedFile('test', false));
 
     }
 
@@ -232,7 +232,7 @@ class UploadTest extends TestCase
         $response = $this->call('POST', 'test-validation', [], [], [], ['Accept' => 'application/json']);
         $this->assertFalse($response->isOk());
 
-        // Test controller based oldFile is working.
+        // Test controller based rememberedFile is working.
         $file = $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'stubs'.DIRECTORY_SEPARATOR.'test.jpg');
         $response = $this->call('POST', 'test-validation', [], [], ['img' => $file], ['Accept' => 'application/json']);
         $this->assertTrue($response->isOk());
@@ -271,7 +271,7 @@ class UploadTest extends TestCase
         $response = $this->call('POST', 'test-validation', [], [], ['img' => $file], ['Accept' => 'application/json']);
         $this->assertFalse($response->isOk());
 
-        $remembered = oldFile('img');
+        $remembered = rememberedFile('img');
         $this->assertNull($remembered);
     }
 
