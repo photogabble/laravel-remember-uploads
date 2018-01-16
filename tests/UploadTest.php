@@ -61,13 +61,7 @@ class UploadTest extends TestCase
         $remembered = $session->get('_remembered_files', []);
         $this->assertEquals([], $remembered);
 
-        $stub = __DIR__.DIRECTORY_SEPARATOR.'stubs'.DIRECTORY_SEPARATOR.'test.jpg';
-        $name = str_random(8).'.jpg';
-        $path = sys_get_temp_dir().DIRECTORY_SEPARATOR.$name;
-
-        copy($stub, $path);
-
-        $file = new UploadedFile($path, $name, filesize($path), 'image/jpeg', null, true);
+        $file = $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'stubs'.DIRECTORY_SEPARATOR.'test.jpg');
 
         $response = $this->call('POST', 'test', [], [], ['img' => $file], ['Accept' => 'application/json']);
         $this->assertTrue($response->isOk());
@@ -77,7 +71,7 @@ class UploadTest extends TestCase
 
         $remembered = $session->get('_remembered_files');
         $this->assertArrayHasKey('img', $remembered);
-        $this->assertEquals($name, $remembered['img']['originalName']);
+        $this->assertEquals($file->getClientOriginalName(), $remembered['img']['originalName']);
 
         //
         // Test that the view composer sets the right properties
@@ -126,16 +120,9 @@ class UploadTest extends TestCase
         /** @var Store $session */
         $session = $this->app->make(Store::class);
 
-
-        // Copy Stub File
-        $stub = __DIR__.DIRECTORY_SEPARATOR.'stubs'.DIRECTORY_SEPARATOR.'test.jpg';
-        $name = str_random(8).'.jpg';
-        $path = sys_get_temp_dir().DIRECTORY_SEPARATOR.$name;
-
-        copy($stub, $path);
-
         // Post the File the first time
-        $file = new UploadedFile($path, $name, filesize($path), 'image/jpeg', null, true);
+        $file = $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'stubs'.DIRECTORY_SEPARATOR.'test.jpg');
+
         $this->call('POST', 'test-request', [], [], ['img' => $file], ['Accept' => 'application/json']);
         $session->ageFlashData();
 
@@ -163,13 +150,7 @@ class UploadTest extends TestCase
         $remembered = $session->get('_remembered_files', []);
         $this->assertEquals([], $remembered);
 
-        $stub = __DIR__.DIRECTORY_SEPARATOR.'stubs'.DIRECTORY_SEPARATOR.'test.jpg';
-        $name = str_random(8).'.jpg';
-        $path = sys_get_temp_dir().DIRECTORY_SEPARATOR.$name;
-
-        copy($stub, $path);
-
-        $file = new UploadedFile($path, $name, filesize($path), 'image/jpeg', null, true);
+        $file = $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'stubs'.DIRECTORY_SEPARATOR.'test.jpg');
 
         $response = $this->call('POST', 'test', [], [], ['img' => $file], ['Accept' => 'application/json']);
         $this->assertTrue($response->isOk());
@@ -177,7 +158,7 @@ class UploadTest extends TestCase
 
         // "Refresh"...
 
-        $response = $this->call('POST', 'test', ['_rememberedFiles' => ['img' => $name]], [], [], ['Accept' => 'application/json']);
+        $response = $this->call('POST', 'test', ['_rememberedFiles' => ['img' => $file->getClientOriginalName()]], [], [], ['Accept' => 'application/json']);
         $this->assertTrue($response->isOk());
         $session->ageFlashData();
 
@@ -206,13 +187,7 @@ class UploadTest extends TestCase
         $remembered = $session->get('_remembered_files', []);
         $this->assertEquals([], $remembered);
 
-        $stub = __DIR__.DIRECTORY_SEPARATOR.'stubs'.DIRECTORY_SEPARATOR.'test.jpg';
-        $name = str_random(8).'.jpg';
-        $path = sys_get_temp_dir().DIRECTORY_SEPARATOR.$name;
-
-        copy($stub, $path);
-
-        $file = new UploadedFile($path, $name, filesize($path), 'image/jpeg', null, true);
+        $file = $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'stubs'.DIRECTORY_SEPARATOR.'test.jpg');
 
         $response = $this->call('POST', 'test', [], [], ['img' => $file], ['Accept' => 'application/json']);
         $this->assertTrue($response->isOk());
@@ -229,6 +204,89 @@ class UploadTest extends TestCase
         $this->assertTrue(oldFile('test', true));
         $this->assertFalse(oldFile('test', false));
 
+    }
+
+    /**
+     * Test written for issue #2.
+     * Tests to check that validation being recommended in the README actually works.
+     * @see https://github.com/photogabble/laravel-remember-uploads/issues/2
+     */
+    public function testValidationPasses()
+    {
+        /**
+         * @var \Illuminate\Routing\Router $router
+         */
+        $router = $this->app->make('router');
+        $router->post(
+            'test-validation',
+            [
+                'middleware' => ['remember.files'],
+                'uses' => '\Photogabble\LaravelRememberUploads\Tests\Stubs\ValidationTestController@fileUpload'
+            ]
+        );
+
+        /** @var Store $session */
+        $session = $this->app->make(Store::class);
+
+        // Test controller validation is working.
+        $response = $this->call('POST', 'test-validation', [], [], [], ['Accept' => 'application/json']);
+        $this->assertFalse($response->isOk());
+
+        // Test controller based oldFile is working.
+        $file = $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'stubs'.DIRECTORY_SEPARATOR.'test.jpg');
+        $response = $this->call('POST', 'test-validation', [], [], ['img' => $file], ['Accept' => 'application/json']);
+        $this->assertTrue($response->isOk());
+        $content = json_decode($response->getContent());
+        $this->assertEquals($file->getClientOriginalName(), $content->name);
+
+        $session->ageFlashData();
+        $session->flush();
+
+        // Test controller _rememberedFiles is working.
+        $response = $this->call('POST', 'test-validation', ['_rememberedFiles'=> ['img' => $file->getClientOriginalName()]], [], [], ['Accept' => 'application/json']);
+        $this->assertTrue($response->isOk());
+        $content = json_decode($response->getContent());
+        $this->assertEquals($file->getClientOriginalName(), $content->name);
+    }
+
+    /**
+     * Test written for issue #2
+     * @see https://github.com/photogabble/laravel-remember-uploads/issues/2
+     */
+    public function testFilesForgottenWhenValidationFails()
+    {
+        /**
+         * @var \Illuminate\Routing\Router $router
+         */
+        $router = $this->app->make('router');
+        $router->post(
+            'test-validation',
+            [
+                'middleware' => ['remember.files'],
+                'uses' => '\Photogabble\LaravelRememberUploads\Tests\Stubs\ValidationTestController@failedFileUpload'
+            ]
+        );
+
+        $file = $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'stubs'.DIRECTORY_SEPARATOR.'test.jpg');
+        $response = $this->call('POST', 'test-validation', [], [], ['img' => $file], ['Accept' => 'application/json']);
+        $this->assertFalse($response->isOk());
+
+        $remembered = oldFile('img');
+        $this->assertNull($remembered);
+    }
+
+    /**
+     * Mock an uploaded file from a given src file.
+     *
+     * @param string $stub
+     * @return UploadedFile
+     */
+    private function mockUploadedFile($stub) {
+        $name = str_random(8).'.jpg';
+        $path = sys_get_temp_dir().DIRECTORY_SEPARATOR.$name;
+
+        copy($stub, $path);
+        return new UploadedFile($path, $name, filesize($path), 'image/jpeg', null, true);
     }
 
     private function mockView()
