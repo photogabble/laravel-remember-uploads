@@ -41,8 +41,8 @@ class UploadTest extends TestCase
     public function tearDown()
     {
         $file = new Filesystem();
-        $this->assertTrue($file->cleanDirectory(storage_path('app' . DIRECTORY_SEPARATOR . 'tmp-image-uploads')));
-        $this->assertTrue($file->deleteDirectory(storage_path('app' . DIRECTORY_SEPARATOR . 'tmp-image-uploads')));
+        $file->cleanDirectory(storage_path('app' . DIRECTORY_SEPARATOR . 'tmp-image-uploads'));
+        $file->deleteDirectory(storage_path('app' . DIRECTORY_SEPARATOR . 'tmp-image-uploads'));
         parent::tearDown();
     }
 
@@ -273,6 +273,34 @@ class UploadTest extends TestCase
 
         $remembered = oldFile('img');
         $this->assertNull($remembered);
+    }
+
+    /**
+     * Test written for issue #4.
+     * Tests the clearRememberedFiles helper function.
+     * @see https://github.com/photogabble/laravel-remember-uploads/issues/4
+     */
+    public function testClearRememberedFilesHelperFunction()
+    {
+        /** @var Store $session */
+        $session = $this->app->make(Store::class);
+
+        $remembered = $session->get('_remembered_files', []);
+        $this->assertEquals([], $remembered);
+
+        $file = $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'stubs'.DIRECTORY_SEPARATOR.'test.jpg');
+
+        $response = $this->call('POST', 'test', [], [], ['img' => $file], ['Accept' => 'application/json']);
+        $this->assertTrue($response->isOk());
+        $session->ageFlashData();
+
+        $remembered = $session->get('_remembered_files', []);
+        $this->assertArrayHasKey('img', $remembered);
+
+        clearRememberedFiles();
+
+        $remembered = $session->get('_remembered_files', []);
+        $this->assertEquals([], $remembered);
     }
 
     /**
