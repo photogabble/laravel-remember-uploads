@@ -7,13 +7,14 @@ if (! function_exists('clearRememberedFiles')) {
     }
 }
 
-if (! function_exists('oldFile')) {
+if (! function_exists('rememberedFile'))
+{
     /**
      * @param null|string $key
      * @param null|mixed $default
      * @return mixed|\Symfony\Component\HttpFoundation\FileBag|Illuminate\Http\UploadedFile
      */
-    function oldFile($key = null, $default = null) {
+    function rememberedFile($key = null, $default = null) {
         /** @var Illuminate\Session\Store $session */
         $session = app('session');
 
@@ -37,5 +38,15 @@ if (! function_exists('oldFile')) {
         }
 
         return is_null($key) ? $fileBag : $fileBag->get($key, $default);
+    }
+}
+
+if (! function_exists('oldFile')) {
+    /**
+     * @deprecated
+     * @throws Exception
+     */
+    function oldFile() {
+        throw new Exception('The oldFile function has been deprecated in favour of using rememberedFile');
     }
 }

@@ -33,18 +33,18 @@ Now you can assign the middleware `remember.files` to routes that you want the p
 To ensure that remembered files remain as such accross page refreshes (due to other validation errors) you need to include a reference by way of using a hidden input field with the name `_rememberedFiles`.
 
 ```php
-@if( $oldFile = oldFile('file'))
+@if( $oldFile = rememberedFile('file'))
     <input type="hidden" name="_rememberedFiles[file]" value="{{ $oldFile->getFilename() }}">
 @else
     <input type="file" name="file">
 @endif
 ```
 
-Then within your controller code you can obtain the file via the `oldFile` helper:
+Then within your controller code you can obtain the file via the `rememberedFile` helper:
 
 ```php
 function store(Illuminate\Http\Request $request) {    
-    if ($file = oldFile('img', $request->file('img'))) {
+    if ($file = $request->file('img', rememberedFile('img')) {
         // ... File exists ...
     }
 }
