@@ -8,11 +8,11 @@
 
 ## About this package
 
-This middleware allows the application to capture uploaded files and temporarily store them just-in-case the form validation redirects back otherwise loosing the files before your controler could process them.
+This middleware allows the application to capture uploaded files and temporarily store them just-in-case the form validation redirects back otherwise losing the files before your controller could process them.
 
 ## Install
 
-Add to your project with compoer via `composer require photogabble/laravel-remember-uploads`.
+Add to your project with composer via `composer require photogabble/laravel-remember-uploads`.
 
 To enable the package you will need to add its service provider to your app providers configuration in Laravel.
 
@@ -30,7 +30,7 @@ Now you can assign the middleware `remember.files` to routes that you want the p
 
 ## Usage
 
-To ensure that remembered files remain as such accross page refreshes (due to other validation errors) you need to include a reference by way of using a hidden input field with the name `_rememberedFiles`.
+To ensure that remembered files remain as such across page refreshes (due to other validation errors) you need to include a reference by way of using a hidden input field with the name `_rememberedFiles`.
 
 ```php
 @if( $oldFile = rememberedFile('file'))
@@ -52,4 +52,4 @@ function store(Illuminate\Http\Request $request) {
 
 The `$file` variable will equal an instance of `Symfony\Component\HttpFoundation\File\UploadedFile` if the file has been posted during the current request or remembered. 
 
-This example is viewable as a test case within this libaries tests [here](https://github.com/photogabble/laravel-remember-uploads/blob/master/tests/UploadTest.php#L114).
+This example is viewable as a test case [within this libaries tests](https://github.com/photogabble/laravel-remember-uploads/blob/master/tests/UploadTest.php#L114).
