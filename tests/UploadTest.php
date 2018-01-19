@@ -61,7 +61,7 @@ class UploadTest extends TestCase
         $remembered = $session->get('_remembered_files', []);
         $this->assertEquals([], $remembered);
 
-        $file = $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'stubs'.DIRECTORY_SEPARATOR.'test.jpg');
+        $file = $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'Stubs'.DIRECTORY_SEPARATOR.'test.jpg');
 
         $response = $this->call('POST', 'test', [], [], ['img' => $file], ['Accept' => 'application/json']);
         $this->assertTrue($response->isOk());
@@ -121,7 +121,7 @@ class UploadTest extends TestCase
         $session = $this->app->make(Store::class);
 
         // Post the File the first time
-        $file = $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'stubs'.DIRECTORY_SEPARATOR.'test.jpg');
+        $file = $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'Stubs'.DIRECTORY_SEPARATOR.'test.jpg');
 
         $this->call('POST', 'test-request', [], [], ['img' => $file], ['Accept' => 'application/json']);
         $session->ageFlashData();
@@ -150,7 +150,7 @@ class UploadTest extends TestCase
         $remembered = $session->get('_remembered_files', []);
         $this->assertEquals([], $remembered);
 
-        $file = $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'stubs'.DIRECTORY_SEPARATOR.'test.jpg');
+        $file = $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'Stubs'.DIRECTORY_SEPARATOR.'test.jpg');
 
         $response = $this->call('POST', 'test', [], [], ['img' => $file], ['Accept' => 'application/json']);
         $this->assertTrue($response->isOk());
@@ -187,7 +187,7 @@ class UploadTest extends TestCase
         $remembered = $session->get('_remembered_files', []);
         $this->assertEquals([], $remembered);
 
-        $file = $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'stubs'.DIRECTORY_SEPARATOR.'test.jpg');
+        $file = $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'Stubs'.DIRECTORY_SEPARATOR.'test.jpg');
 
         $response = $this->call('POST', 'test', [], [], ['img' => $file], ['Accept' => 'application/json']);
         $this->assertTrue($response->isOk());
@@ -233,9 +233,8 @@ class UploadTest extends TestCase
         $this->assertFalse($response->isOk());
 
         // Test controller based rememberedFile is working.
-        $file = $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'stubs'.DIRECTORY_SEPARATOR.'test.jpg');
+        $file = $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'Stubs'.DIRECTORY_SEPARATOR.'test.jpg');
         $response = $this->call('POST', 'test-validation', [], [], ['img' => $file], ['Accept' => 'application/json']);
-        var_dump($response->content());
         $this->assertTrue($response->isOk());
         $content = json_decode($response->getContent());
         $this->assertEquals($file->getClientOriginalName(), $content->name);
@@ -268,7 +267,7 @@ class UploadTest extends TestCase
             ]
         );
 
-        $file = $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'stubs'.DIRECTORY_SEPARATOR.'test.jpg');
+        $file = $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'Stubs'.DIRECTORY_SEPARATOR.'test.jpg');
         $response = $this->call('POST', 'test-validation', [], [], ['img' => $file], ['Accept' => 'application/json']);
         $this->assertFalse($response->isOk());
 
@@ -289,7 +288,7 @@ class UploadTest extends TestCase
         $remembered = $session->get('_remembered_files', []);
         $this->assertEquals([], $remembered);
 
-        $file = $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'stubs'.DIRECTORY_SEPARATOR.'test.jpg');
+        $file = $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'Stubs'.DIRECTORY_SEPARATOR.'test.jpg');
 
         $response = $this->call('POST', 'test', [], [], ['img' => $file], ['Accept' => 'application/json']);
         $this->assertTrue($response->isOk());
