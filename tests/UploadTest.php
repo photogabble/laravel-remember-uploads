@@ -211,7 +211,7 @@ class UploadTest extends TestCase
      * Tests to check that validation being recommended in the README actually works.
      * @see https://github.com/photogabble/laravel-remember-uploads/issues/2
      */
-    public function disabledtestValidationPasses()
+    public function testValidationPasses()
     {
         /**
          * @var \Illuminate\Routing\Router $router
@@ -235,6 +235,7 @@ class UploadTest extends TestCase
         // Test controller based rememberedFile is working.
         $file = $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'stubs'.DIRECTORY_SEPARATOR.'test.jpg');
         $response = $this->call('POST', 'test-validation', [], [], ['img' => $file], ['Accept' => 'application/json']);
+        var_dump($response->content());
         $this->assertTrue($response->isOk());
         $content = json_decode($response->getContent());
         $this->assertEquals($file->getClientOriginalName(), $content->name);
