@@ -2,6 +2,7 @@
 <p align="center"><em>Middleware Package</em></p>
 
 <p align="center">
+  <a href="https://travis-ci.org/photogabble/laravel-remember-uploads"><img src="https://travis-ci.org/photogabble/laravel-remember-uploads.svg?branch=master" alt="Build Status"></a>
   <a href="https://packagist.org/packages/photogabble/laravel-remember-uploads"><img src="https://poser.pugx.org/photogabble/laravel-remember-uploads/v/stable.svg" alt="Latest Stable Version"></a>
   <a href="LICENSE"><img src="https://poser.pugx.org/photogabble/laravel-remember-uploads/license.svg" alt="License"></a>
 </p>
