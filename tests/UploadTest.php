@@ -103,6 +103,35 @@ class UploadTest extends TestCase
     }
 
     /**
+     * This tests to see if the middleware correctly captures the uploaded file if the input
+     * is within an array.
+     *
+     * This test was written for issue #15
+     * @see https://github.com/photogabble/laravel-remember-uploads/issues/15
+     */
+    public function testArrayFileUpload()
+    {
+        /** @var Store $session */
+        $session = $this->app->make(Store::class);
+
+        $remembered = $session->get('_remembered_files', []);
+        $this->assertEquals([], $remembered);
+
+        $response = $this->call('POST', 'test', [], [], ['img' => [
+            $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'Stubs'.DIRECTORY_SEPARATOR.'test.jpg'),
+            $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'Stubs'.DIRECTORY_SEPARATOR.'test.jpg'),
+        ]], ['Accept' => 'application/json']);
+
+        $this->assertTrue($response->isOk());
+        $content = json_decode($response->getContent());
+        $this->assertTrue($content->ok);
+        $session->ageFlashData();
+
+        $remembered = $session->get('_remembered_files');
+        $this->assertArrayHasKey('img', $remembered);
+    }
+
+    /**
      * This test is in place as an example to be referenced by the README.md
      */
     public function testFileControllerExample()
