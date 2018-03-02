@@ -8,6 +8,27 @@ use Illuminate\Session\Store;
 use Photogabble\LaravelRememberUploads\RememberedFile;
 use Illuminate\Http\UploadedFile;
 
+/**
+ * Class RememberFileUploads
+ *
+ * The point of this middleware is to provide a caching mechanism for uploaded files that would otherwise be lost
+ * if the originating form has a validation error.
+ *
+ * The logical flow is as follows:
+ *
+ * 1.   Form Submit
+ * 2.   Middleware checks Request for files
+ *      2.a If files found:
+ *          2.a.i   Check that they aren't already cached -> if they are replace cached
+ *                  version with fresh uploaded version
+ *          2.a.ii  For Uploaded Files that aren't cached do so
+ * 3.   On validation error user is redirected back to form
+ *      3.a Form now contains hidden fields for each item returned by rememberedFile helper.
+ * 4.   Controller method can obtain Files via the rememberedFile helper.
+ * 5.   Controller clears remembered files via the clearRememberedFiles helper.
+ *
+ * @package Photogabble\LaravelRememberUploads\Middleware
+ */
 class RememberFileUploads
 {
 
@@ -63,27 +84,9 @@ class RememberFileUploads
      */
     public function handle($request, Closure $next, $fields = ['*'])
     {
-        //
-        // There is a bug here, that if the user uploads an additional file to what has been remembered
-        // then they will loose the remembered one.
-        //
-        // The method checkRequestForRemembered needs to always be executed.
-        // @todo the above
-        //
-
-        // Foreach UploadedFile convert to RememberedFile and store in cache.
-        // also flash to session as key _remembered_files
         // @todo write a test to check that adding additional uploaded files to the same session doesn't break things
 
-
-
-
-        if ($request->files->count() > 0) {
-            $this->remember($request, $fields);
-        }else{
-            $this->checkRequestForRemembered($request, $fields);
-        }
-
+        $this->session->flash('_remembered_files', array_merge($this->checkRequestForRemembered($request, $fields), $this->remember($request, $fields)));
         return $next($request);
     }
 
@@ -92,21 +95,13 @@ class RememberFileUploads
      *
      * @param \Illuminate\Http\Request $request
      * @param array $fields
+     * @return array|RememberedFile[]
      */
     private function checkRequestForRemembered($request, array $fields)
     {
         $remembered = $request->get('_rememberedFiles', []);
         $files = ($fields[0] === '*') ? $remembered : array_filter($remembered, function($k) use ($fields) { return in_array($k, $fields); }, ARRAY_FILTER_USE_KEY);
-        $stored = [];
-
-        foreach ($files as $key => $fileName) {
-            if (! $this->cache->has('_remembered_files.'.$key)){
-                continue;
-            }
-            $stored[$key] = $this->cache->get('_remembered_files.'.$key);
-        }
-
-        $this->session->flash('_remembered_files', $stored);
+        return $this->rememberFilesFactory($files);
     }
 
     /**
@@ -114,18 +109,20 @@ class RememberFileUploads
      *
      * @param \Illuminate\Http\Request $request
      * @param array $fields
-     * @throws \Exception
+     * @return array|RememberedFile[]
      */
     private function remember($request, array $fields)
     {
         $files = ($fields[0] === '*') ? $request->files : $request->only($fields);
-        $this->session->flash('_remembered_files', $this->rememberFilesFactory($files));
+        return $this->rememberFilesFactory($files);
     }
 
     /**
+     * Recursive factory method to create RememberedFile from UploadedFile.
+     *
      * @param array|UploadedFile[] $files
      * @param string $prefix
-     * @return array
+     * @return array|RememberedFile[]
      */
     private function rememberFilesFactory($files, $prefix = '')
     {
@@ -133,6 +130,17 @@ class RememberFileUploads
 
         foreach ($files as $key => $file) {
             $cacheKey = $prefix . (empty($prefix) ? '' : '.') . $key;
+            if (is_string($file)){
+                if (! $this->cache->has('_remembered_files.'.$cacheKey)){
+                    continue;
+                }
+                $cached = $this->cache->get('_remembered_files.'.$cacheKey);
+                if ($cached instanceof RememberedFile){
+                    $result[$key] = $cached;
+                }
+                unset($cached);
+                continue;
+            }
             if (is_array($file)) {
                 $result[$key] = $this->rememberFilesFactory($file, $cacheKey);
             } else {
