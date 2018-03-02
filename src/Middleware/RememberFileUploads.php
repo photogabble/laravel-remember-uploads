@@ -70,6 +70,14 @@ class RememberFileUploads
         // The method checkRequestForRemembered needs to always be executed.
         // @todo the above
         //
+
+        // Foreach UploadedFile convert to RememberedFile and store in cache.
+        // also flash to session as key _remembered_files
+        // @todo write a test to check that adding additional uploaded files to the same session doesn't break things
+
+
+
+
         if ($request->files->count() > 0) {
             $this->remember($request, $fields);
         }else{
