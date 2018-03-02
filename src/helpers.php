@@ -44,6 +44,7 @@ if (! function_exists('oldFile')) {
     /**
      * @deprecated
      * @throws Exception
+     * @todo remove from version 1.4 onwards
      */
     function oldFile() {
         throw new Exception('The oldFile function has been deprecated in favour of using rememberedFile');
