@@ -2,6 +2,8 @@
 
 namespace Photogabble\LaravelRememberUploads;
 
+use Symfony\Component\HttpFoundation\File\UploadedFile;
+
 class RememberedFile
 {
     /**
@@ -34,16 +36,23 @@ class RememberedFile
 
     /**
      * RememberedFile constructor.
+     *
      * @param string $tmpPathname
-     * @param string $originalName
-     * @param string $mimeType
-     * @param int $size
+     * @param UploadedFile $file
      */
-    public function __construct($tmpPathname, $originalName, $mimeType, $size)
+    public function __construct($tmpPathname, UploadedFile $file)
     {
         $this->tmpPathname = $tmpPathname;
-        $this->originalName = $originalName;
-        $this->mimeType = $mimeType;
-        $this->size = $size;
+        $this->originalName = $file->getClientOriginalName();
+        $this->mimeType = $file->getMimeType();
+        $this->size = $file->getSize();
+    }
+
+    /**
+     * @return UploadedFile
+     */
+    public function toUploadedFile()
+    {
+        return new UploadedFile($this->tmpPathname, $this->originalName, $this->mimeType, $this->size);
     }
 }
