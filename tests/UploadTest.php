@@ -244,9 +244,48 @@ class UploadTest extends TestCase
         $this->assertEquals(0, $viewData['rememberedFiles']->count());
     }
 
+    /**
+     * This test was written for issue #15.
+     * @see https://github.com/photogabble/laravel-remember-uploads/issues/15
+     */
     public function testArrayFileUploadOldRemembered()
     {
-        $this->assertTrue(false); // @todo for issue #15
+        /** @var Store $session */
+        $session = $this->app->make(Store::class);
+
+        $remembered = $session->get('_remembered_files', []);
+        $this->assertEquals([], $remembered);
+
+        $files = [
+            $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'Stubs'.DIRECTORY_SEPARATOR.'test.jpg'),
+            $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'Stubs'.DIRECTORY_SEPARATOR.'test.jpg'),
+        ];
+
+        $response = $this->call('POST', 'test', [], [], ['img' => $files], ['Accept' => 'application/json']);
+        $this->assertTrue($response->isOk());
+        $session->ageFlashData();
+
+        // "Refresh"...
+
+        $response = $this->call('POST', 'test', ['_rememberedFiles' => ['img' => [$files[0]->getClientOriginalName(), $files[1]->getClientOriginalName()]]], [], [], ['Accept' => 'application/json']);
+        $this->assertTrue($response->isOk());
+        $session->ageFlashData();
+
+        $viewData = $this->mockView()->getData();
+        $this->assertArrayHasKey('rememberedFiles', $viewData);
+        $this->assertInstanceOf(FileBag::class, $viewData['rememberedFiles']);
+        $this->assertEquals(2, $viewData['rememberedFiles']->count());
+
+        // "Refresh...
+
+        $response = $this->call('POST', 'test', [], [], [], ['Accept' => 'application/json']);
+        $this->assertTrue($response->isOk());
+        $session->ageFlashData();
+
+        $viewData = $this->mockView()->getData();
+        $this->assertArrayHasKey('rememberedFiles', $viewData);
+        $this->assertInstanceOf(FileBag::class, $viewData['rememberedFiles']);
+        $this->assertEquals(0, $viewData['rememberedFiles']->count());
     }
 
     /**
