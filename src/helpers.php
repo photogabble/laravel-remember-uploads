@@ -23,16 +23,15 @@ if (! function_exists('rememberedFile'))
 
         $fileBag = new Symfony\Component\HttpFoundation\FileBag();
         if ($files = $session->get('_remembered_files', null)) {
+            /**
+             * @var string $k
+             * @var \Photogabble\LaravelRememberUploads\RememberedFile $f
+             */
             foreach($files as $k => $f) {
                 if ($errors->has($k)) { continue; }
                 $fileBag->set(
                     $k,
-                    new Illuminate\Http\UploadedFile(
-                        $f['tmpPathName'],
-                        $f['originalName'],
-                        $f['mimeType'],
-                        $f['size']
-                    )
+                    $f->toUploadedFile()
                 );
             }
         }

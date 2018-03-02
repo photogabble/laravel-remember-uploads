@@ -5,7 +5,8 @@ namespace Photogabble\LaravelRememberUploads\Middleware;
 use Closure;
 use Illuminate\Cache\CacheManager;
 use Illuminate\Session\Store;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Photogabble\LaravelRememberUploads\RememberedFile;
+use Illuminate\Http\UploadedFile;
 
 class RememberFileUploads
 {
@@ -91,19 +92,10 @@ class RememberFileUploads
         $stored = [];
 
         foreach ($files as $key => $fileName) {
-            $storagePathName = $this->storagePath . DIRECTORY_SEPARATOR . $fileName;
-
             if (! $this->cache->has('_remembered_files.'.$key)){
                 continue;
             }
-
-            $cached = $this->cache->get('_remembered_files.'.$key);
-            $stored[$key] = [
-                'tmpPathName' => $storagePathName,
-                'originalName' => $cached['originalName'],
-                'mimeType' => $cached['mimeType'],
-                'size' => $cached['size']
-            ];
+            $stored[$key] = $this->cache->get('_remembered_files.'.$key);
         }
 
         $this->session->flash('_remembered_files', $stored);
@@ -119,30 +111,31 @@ class RememberFileUploads
     private function remember($request, array $fields)
     {
         $files = ($fields[0] === '*') ? $request->files : $request->only($fields);
-        $stored = [];
+        $this->session->flash('_remembered_files', $this->rememberFilesFactory($files));
+    }
 
-        /**
-         * @var UploadedFile $file
-         * @todo there is likely a bug here when $file is an array and not an UploadedFile... write unit test
-         */
+    /**
+     * @param array|UploadedFile[] $files
+     * @param string $prefix
+     * @return array
+     */
+    private function rememberFilesFactory($files, $prefix = '')
+    {
+        $result = [];
+
         foreach ($files as $key => $file) {
-            $storagePathName = $this->storagePath . DIRECTORY_SEPARATOR . $file->getFilename();
-            copy($file->getPathname(), $storagePathName);
-
-            $this->cache->put('_remembered_files.'.$key, [
-                'originalName' => $file->getClientOriginalName(),
-                'mimeType' => $file->getMimeType(),
-                'size' => $file->getSize()
-            ], $this->cacheTimeout);
-
-            $stored[$key] = [
-                'tmpPathName' => $storagePathName,
-                'originalName' => $file->getClientOriginalName(),
-                'mimeType' => $file->getMimeType(),
-                'size' => $file->getSize()
-            ];
+            $cacheKey = $prefix . (empty($prefix) ? '' : '.') . $key;
+            if (is_array($file)) {
+                $result[$key] = $this->rememberFilesFactory($file, $cacheKey);
+            } else {
+                $storagePathName = $this->storagePath . DIRECTORY_SEPARATOR . $file->getFilename();
+                copy($file->getPathname(), $storagePathName);
+                $rememberedFile = new RememberedFile($storagePathName, $file);
+                $this->cache->put('_remembered_files.'.$cacheKey, $rememberedFile, $this->cacheTimeout);
+                $result[$key] = $rememberedFile;
+            }
         }
 
-        $this->session->flash('_remembered_files', $stored);
+        return $result;
     }
 }
