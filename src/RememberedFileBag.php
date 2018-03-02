@@ -2,7 +2,6 @@
 
 namespace Photogabble\LaravelRememberUploads;
 
-use Illuminate\Http\UploadedFile;
 use Symfony\Component\HttpFoundation\FileBag;
 use Symfony\Component\HttpFoundation\ParameterBag;
 
@@ -13,7 +12,9 @@ class RememberedFileBag extends ParameterBag
      */
     public function filterFailedValidation($messageBag)
     {
-
+        foreach($messageBag->keys() as $key) {
+            $this->remove($key);
+        }
     }
 
     /**

@@ -21,6 +21,7 @@ if (! function_exists('rememberedFile'))
         /** @var \Illuminate\Support\MessageBag $errors */
         $errors = $session->get('errors', new \Illuminate\Support\MessageBag());
 
+        /** @var \Photogabble\LaravelRememberUploads\RememberedFileBag $fileBag */
         $fileBag = $session->get('_remembered_files', new \Photogabble\LaravelRememberUploads\RememberedFileBag());
         $fileBag->filterFailedValidation($errors);
         $fileBag = $fileBag->toFileBag();

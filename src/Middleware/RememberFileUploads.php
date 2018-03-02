@@ -135,6 +135,7 @@ class RememberFileUploads
                 if (! $this->cache->has('_remembered_files.'.$cacheKey)){
                     continue;
                 }
+                /** @noinspection Annotator */
                 $cached = $this->cache->get('_remembered_files.'.$cacheKey);
                 if ($cached instanceof RememberedFile){
                     $result[$key] = $cached;

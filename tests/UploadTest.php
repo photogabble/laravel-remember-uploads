@@ -9,6 +9,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Session\Store;
 use Illuminate\View\View;
 use Orchestra\Testbench\TestCase;
+use Photogabble\LaravelRememberUploads\RememberedFileBag;
 use Photogabble\LaravelRememberUploads\RememberUploadsServiceProvider;
 use Photogabble\LaravelRememberUploads\ViewComposers\RememberedFilesComposer;
 use Symfony\Component\HttpFoundation\FileBag;
@@ -69,9 +70,11 @@ class UploadTest extends TestCase
         $this->assertTrue($content->ok);
         $session->ageFlashData(); // should this be required, shouldn't it happen during $this->call?
 
+        /** @var RememberedFileBag $remembered */
         $remembered = $session->get('_remembered_files');
-        $this->assertArrayHasKey('img', $remembered);
-        $this->assertEquals($file->getClientOriginalName(), $remembered['img']->originalName);
+        $this->assertInstanceOf(RememberedFileBag::class, $remembered);
+        $this->assertTrue($remembered->has('img'));
+        $this->assertEquals($file->getClientOriginalName(), $remembered->get('img')->originalName);
 
         //
         // Test that the view composer sets the right properties
@@ -79,8 +82,10 @@ class UploadTest extends TestCase
 
         $viewData = $this->mockView()->getData();
         $this->assertArrayHasKey('rememberedFiles', $viewData);
-        $this->assertInstanceOf(FileBag::class, $viewData['rememberedFiles']);
-        $this->assertEquals(1, $viewData['rememberedFiles']->count());
+        /** @var FileBag $remembered */
+        $remembered = $viewData['rememberedFiles'];
+        $this->assertInstanceOf(FileBag::class, $remembered);
+        $this->assertEquals(1, $remembered->count());
 
         //
         // Test that upon re-calling the post event without any image data that
@@ -91,8 +96,9 @@ class UploadTest extends TestCase
         $this->assertTrue($response->isOk());
         $session->ageFlashData(); // should this be required, shouldn't it happen during $this-
 
-        $remembered = $session->get('_remembered_files', []);
-        $this->assertEquals([], $remembered);
+        $remembered = $session->get('_remembered_files', new RememberedFileBag());
+        $this->assertInstanceOf(RememberedFileBag::class, $remembered);
+        $this->assertEquals(0, $remembered->count());
 
         //
         // Test that the view composer sets the right properties
@@ -100,8 +106,10 @@ class UploadTest extends TestCase
 
         $viewData = $this->mockView()->getData();
         $this->assertArrayHasKey('rememberedFiles', $viewData);
-        $this->assertInstanceOf(FileBag::class, $viewData['rememberedFiles']);
-        $this->assertEquals(0, $viewData['rememberedFiles']->count());
+        /** @var FileBag $remembered */
+        $remembered = $viewData['rememberedFiles'];
+        $this->assertInstanceOf(FileBag::class, $remembered);
+        $this->assertEquals(0, $remembered->count());
     }
 
     /**
@@ -130,11 +138,12 @@ class UploadTest extends TestCase
         $this->assertTrue($content->ok);
         $session->ageFlashData();
 
+        /** @var RememberedFileBag $remembered */
         $remembered = $session->get('_remembered_files');
-        $this->assertArrayHasKey('img', $remembered);
-        $this->assertTrue(is_array($remembered['img']));
-        $this->assertEquals($files[0]->getClientOriginalName(), $remembered['img'][0]->originalName);
-        $this->assertEquals($files[1]->getClientOriginalName(), $remembered['img'][1]->originalName);
+        $this->assertTrue($remembered->has('img'));
+        $this->assertTrue(is_array($remembered->get('img')));
+        $this->assertEquals($files[0]->getClientOriginalName(), $remembered->get('img')[0]->originalName);
+        $this->assertEquals($files[1]->getClientOriginalName(), $remembered->get('img')[1]->originalName);
 
         //
         // Test that the view composer sets the right properties
@@ -142,8 +151,15 @@ class UploadTest extends TestCase
 
         $viewData = $this->mockView()->getData();
         $this->assertArrayHasKey('rememberedFiles', $viewData);
+
+        /** @var FileBag $remembered */
+        $remembered = $viewData['rememberedFiles'];
+
         $this->assertInstanceOf(FileBag::class, $viewData['rememberedFiles']);
-        $this->assertEquals(2, $viewData['rememberedFiles']->count());
+        $this->assertEquals(1, $remembered->count());
+        $this->assertTrue($remembered->has('img'));
+        $this->assertTrue(is_array($remembered->get('img')));
+        $this->assertEquals(2, count($remembered->get('img')));
 
         //
         // Test that upon re-calling the post event without any image data that
@@ -154,8 +170,9 @@ class UploadTest extends TestCase
         $this->assertTrue($response->isOk());
         $session->ageFlashData(); // should this be required, shouldn't it happen during $this-
 
-        $remembered = $session->get('_remembered_files', []);
-        $this->assertEquals([], $remembered);
+        $remembered = $session->get('_remembered_files', new RememberedFileBag());
+        $this->assertInstanceOf(RememberedFileBag::class, $remembered);
+        $this->assertEquals(0, $remembered->count());
 
         //
         // Test that the view composer sets the right properties
@@ -163,8 +180,10 @@ class UploadTest extends TestCase
 
         $viewData = $this->mockView()->getData();
         $this->assertArrayHasKey('rememberedFiles', $viewData);
-        $this->assertInstanceOf(FileBag::class, $viewData['rememberedFiles']);
-        $this->assertEquals(0, $viewData['rememberedFiles']->count());
+        /** @var FileBag $remembered */
+        $remembered = $viewData['rememberedFiles'];
+        $this->assertInstanceOf(FileBag::class, $remembered);
+        $this->assertEquals(0, $remembered->count());
     }
 
     /**
@@ -229,8 +248,10 @@ class UploadTest extends TestCase
 
         $viewData = $this->mockView()->getData();
         $this->assertArrayHasKey('rememberedFiles', $viewData);
-        $this->assertInstanceOf(FileBag::class, $viewData['rememberedFiles']);
-        $this->assertEquals(1, $viewData['rememberedFiles']->count());
+        /** @var FileBag $remembered */
+        $remembered = $viewData['rememberedFiles'];
+        $this->assertInstanceOf(FileBag::class, $remembered);
+        $this->assertEquals(1, $remembered->count());
 
         // "Refresh...
 
@@ -240,8 +261,10 @@ class UploadTest extends TestCase
 
         $viewData = $this->mockView()->getData();
         $this->assertArrayHasKey('rememberedFiles', $viewData);
-        $this->assertInstanceOf(FileBag::class, $viewData['rememberedFiles']);
-        $this->assertEquals(0, $viewData['rememberedFiles']->count());
+        /** @var FileBag $remembered */
+        $remembered = $viewData['rememberedFiles'];
+        $this->assertInstanceOf(FileBag::class, $remembered);
+        $this->assertEquals(0, $remembered->count());
     }
 
     /**
@@ -273,8 +296,10 @@ class UploadTest extends TestCase
 
         $viewData = $this->mockView()->getData();
         $this->assertArrayHasKey('rememberedFiles', $viewData);
-        $this->assertInstanceOf(FileBag::class, $viewData['rememberedFiles']);
-        $this->assertEquals(2, $viewData['rememberedFiles']->count());
+        /** @var FileBag $remembered */
+        $remembered = $viewData['rememberedFiles'];
+        $this->assertInstanceOf(FileBag::class, $remembered);
+        $this->assertEquals(1, $remembered->count());
 
         // "Refresh...
 
@@ -284,8 +309,10 @@ class UploadTest extends TestCase
 
         $viewData = $this->mockView()->getData();
         $this->assertArrayHasKey('rememberedFiles', $viewData);
-        $this->assertInstanceOf(FileBag::class, $viewData['rememberedFiles']);
-        $this->assertEquals(0, $viewData['rememberedFiles']->count());
+        /** @var FileBag $remembered */
+        $remembered = $viewData['rememberedFiles'];
+        $this->assertInstanceOf(FileBag::class, $remembered);
+        $this->assertEquals(0, $remembered->count());
     }
 
     /**
@@ -341,7 +368,6 @@ class UploadTest extends TestCase
 
         $fileBag = rememberedFile();
         $this->assertInstanceOf(FileBag::class, $fileBag);
-        $n = 1;
     }
 
     /**
@@ -432,13 +458,15 @@ class UploadTest extends TestCase
         $this->assertTrue($response->isOk());
         $session->ageFlashData();
 
-        $remembered = $session->get('_remembered_files', []);
-        $this->assertArrayHasKey('img', $remembered);
+        /** @var RememberedFileBag $remembered */
+        $remembered = $session->get('_remembered_files', new RememberedFileBag());
+        $this->assertTrue($remembered->has(('img')));
 
         clearRememberedFiles();
 
-        $remembered = $session->get('_remembered_files', []);
-        $this->assertEquals([], $remembered);
+        /** @var RememberedFileBag $remembered */
+        $remembered = $session->get('_remembered_files', new RememberedFileBag());
+        $this->assertFalse($remembered->has(('img')));
     }
 
     /**
