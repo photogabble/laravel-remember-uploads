@@ -18,23 +18,12 @@ if (! function_exists('rememberedFile'))
         /** @var Illuminate\Session\Store $session */
         $session = app('session');
 
-        /** @var \Illuminate\Support\ViewErrorBag $errors */
+        /** @var \Illuminate\Support\MessageBag $errors */
         $errors = $session->get('errors', new \Illuminate\Support\MessageBag());
 
-        $fileBag = new Symfony\Component\HttpFoundation\FileBag();
-        if ($files = $session->get('_remembered_files', null)) {
-            /**
-             * @var string $k
-             * @var \Photogabble\LaravelRememberUploads\RememberedFile $f
-             */
-            foreach($files as $k => $f) {
-                if ($errors->has($k)) { continue; }
-                $fileBag->set(
-                    $k,
-                    $f->toUploadedFile()
-                );
-            }
-        }
+        $fileBag = $session->get('_remembered_files', new \Photogabble\LaravelRememberUploads\RememberedFileBag());
+        $fileBag->filterFailedValidation($errors);
+        $fileBag = $fileBag->toFileBag();
 
         return is_null($key) ? $fileBag : $fileBag->get($key, $default);
     }

@@ -7,6 +7,7 @@ use Illuminate\Cache\CacheManager;
 use Illuminate\Session\Store;
 use Photogabble\LaravelRememberUploads\RememberedFile;
 use Illuminate\Http\UploadedFile;
+use Photogabble\LaravelRememberUploads\RememberedFileBag;
 
 /**
  * Class RememberFileUploads
@@ -76,6 +77,8 @@ class RememberFileUploads
     /**
      * Handle an incoming request.
      *
+     * @todo write a test to check that adding additional uploaded files to the same session doesn't break things
+     *
      * @param  \Illuminate\Http\Request $request
      * @param  \Closure $next
      * @param  array $fields
@@ -84,9 +87,7 @@ class RememberFileUploads
      */
     public function handle($request, Closure $next, $fields = ['*'])
     {
-        // @todo write a test to check that adding additional uploaded files to the same session doesn't break things
-
-        $this->session->flash('_remembered_files', array_merge($this->checkRequestForRemembered($request, $fields), $this->remember($request, $fields)));
+        $this->session->flash('_remembered_files', new RememberedFileBag(array_merge($this->checkRequestForRemembered($request, $fields), $this->remember($request, $fields))));
         return $next($request);
     }
 
