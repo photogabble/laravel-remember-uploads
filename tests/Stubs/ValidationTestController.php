@@ -23,6 +23,21 @@ class ValidationTestController extends Controller
         ]);
     }
 
+    public function arrayFileUpload(Request $request)
+    {
+        $this->validate($request, [
+            'img' => 'array|required_without:_rememberedFiles.img|mimes:jpeg',
+            'img.*' => 'present|file|mimes:jpeg'
+        ]);
+
+        $files = rememberedFile('img', $request->file('img'));
+
+        return json_encode([
+            'name_0' => $files->get('img')[0],
+            'name_1' => $files->get('img')[1],
+        ]);
+    }
+
     public function failedFileUpload(Request $request)
     {
         $this->validate($request, [

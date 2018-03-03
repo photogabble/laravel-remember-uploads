@@ -375,7 +375,7 @@ class UploadTest extends TestCase
      * Tests to check that validation being recommended in the README actually works.
      * @see https://github.com/photogabble/laravel-remember-uploads/issues/2
      */
-    public function testValidationPasses()
+    public function testSingleFileValidationPasses()
     {
         /**
          * @var \Illuminate\Routing\Router $router
@@ -411,6 +411,50 @@ class UploadTest extends TestCase
         $this->assertTrue($response->isOk());
         $content = json_decode($response->getContent());
         $this->assertEquals($file->getClientOriginalName(), $content->name);
+    }
+
+    public function testArrayFileValidationPasses()
+    {
+        /**
+         * @var \Illuminate\Routing\Router $router
+         */
+        $router = $this->app->make('router');
+        $router->post(
+            'test-validation',
+            [
+                'middleware' => ['remember.files'],
+                'uses' => '\Photogabble\LaravelRememberUploads\Tests\Stubs\ValidationTestController@arrayFileUpload'
+            ]
+        );
+
+        /** @var Store $session */
+        $session = $this->app->make(Store::class);
+
+        // Test controller validation is working.
+        $response = $this->call('POST', 'test-validation', [], [], [], ['Accept' => 'application/json']);
+        $this->assertFalse($response->isOk());
+
+        // Test controller based rememberedFile is working.
+        $files = [
+            $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'Stubs'.DIRECTORY_SEPARATOR.'test.jpg'),
+            $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'Stubs'.DIRECTORY_SEPARATOR.'test.jpg'),
+        ];
+
+        $response = $this->call('POST', 'test-validation', [], [], ['img' => $files], ['Accept' => 'application/json']);
+        $this->assertTrue($response->isOk());
+        $content = json_decode($response->getContent());
+        $this->assertEquals($files[0]->getClientOriginalName(), $content->name_0);
+        $this->assertEquals($files[1]->getClientOriginalName(), $content->name_1);
+
+        $session->ageFlashData();
+        $session->flush();
+
+        // Test controller _rememberedFiles is working.
+        $response = $this->call('POST', 'test-validation', ['_rememberedFiles'=> ['img' => [$files[0]->getClientOriginalName(), $files[1]->getClientOriginalName()]]], [], [], ['Accept' => 'application/json']);
+        $this->assertTrue($response->isOk());
+        $content = json_decode($response->getContent());
+        $this->assertEquals($files[0]->getClientOriginalName(), $content->name_0);
+        $this->assertEquals($files[1]->getClientOriginalName(), $content->name_1);
     }
 
     /**
