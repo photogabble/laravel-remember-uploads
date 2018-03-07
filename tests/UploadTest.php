@@ -432,6 +432,8 @@ class UploadTest extends TestCase
 
         // Test controller validation is working.
         $response = $this->call('POST', 'test-validation', [], [], [], ['Accept' => 'application/json']);
+        $this->assertFalse(is_null($response->exception));
+        $this->assertEquals('The given data failed to pass validation.', $response->exception->getMessage());
         $this->assertFalse($response->isOk());
 
         // Test controller based rememberedFile is working.
@@ -441,7 +443,9 @@ class UploadTest extends TestCase
         ];
 
         $response = $this->call('POST', 'test-validation', [], [], ['img' => $files], ['Accept' => 'application/json']);
+        $this->assertTrue(is_null($response->exception));
         $this->assertTrue($response->isOk());
+
         $content = json_decode($response->getContent());
         $this->assertEquals($files[0]->getClientOriginalName(), $content->name_0);
         $this->assertEquals($files[1]->getClientOriginalName(), $content->name_1);
