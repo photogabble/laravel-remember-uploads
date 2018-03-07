@@ -16,7 +16,7 @@ class RememberUploadsServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        // Using class based composers...
+        /** @noinspection PhpUndefinedMethodInspection */
         View::composer(
             '*',
             'Photogabble\LaravelRememberUploads\ViewComposers\RememberedFilesComposer'
