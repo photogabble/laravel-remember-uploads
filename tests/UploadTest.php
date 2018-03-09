@@ -540,7 +540,6 @@ class UploadTest extends TestCase
         );
 
         $router->get('single-file-test', [
-            'middleware' => ['remember.files'],
             function(){
                 $files = rememberedFile();
                 $this->assertEquals(1, $files->count());
