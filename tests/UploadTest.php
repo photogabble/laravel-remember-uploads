@@ -517,6 +517,51 @@ class UploadTest extends TestCase
         $this->assertFalse($remembered->has(('img')));
     }
 
+
+    /**
+     * Test written for issue #15
+     * Regression of single file upload found during 1.3.0-alpha
+     * testing by Jarosław Goszowski.
+     * @see https://github.com/photogabble/laravel-remember-uploads/issues/15
+     * @throws \Exception
+     */
+    public function testSingleFileRegressionTest()
+    {
+        /**
+         * @var \Illuminate\Routing\Router $router
+         */
+        $router = $this->app->make('router');
+        $router->post(
+            'test-controller',
+            [
+                'middleware' => ['remember.files'],
+                'uses' => '\Photogabble\LaravelRememberUploads\Tests\Stubs\TestController@store'
+            ]
+        );
+
+        $router->get('single-file-test', [
+            'middleware' => ['remember.files'],
+            function(){
+                $files = rememberedFile();
+                $this->assertEquals(1, $files->count());
+                return '';
+            }
+        ]);
+
+        $file = $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'Stubs'.DIRECTORY_SEPARATOR.'test.jpg');
+        $response = $this->call('POST', 'test-controller', [], [], ['image' => $file], ['Accept' => 'application/json']);
+
+        $this->assertTrue($response->isRedirection());
+
+        $response = $this->call('GET', 'single-file-test', [], [], [], ['Accept' => 'application/json']);
+
+        if ($response->exception){
+            throw $response->exception;
+        }
+
+        $this->assertTrue($response->isOk());
+    }
+
     /**
      * Mock an uploaded file from a given src file.
      *
