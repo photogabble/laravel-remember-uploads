@@ -4,7 +4,7 @@ namespace Photogabble\LaravelRememberUploads\Tests\Stubs;
 
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Http\Request;
-use Illuminate\Http\UploadedFile;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Illuminate\Routing\Controller;
 
 class ValidationTestController extends Controller

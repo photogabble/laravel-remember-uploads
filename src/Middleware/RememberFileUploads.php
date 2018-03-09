@@ -6,7 +6,7 @@ use Closure;
 use Illuminate\Cache\CacheManager;
 use Illuminate\Session\Store;
 use Photogabble\LaravelRememberUploads\RememberedFile;
-use Illuminate\Http\UploadedFile;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Photogabble\LaravelRememberUploads\RememberedFileBag;
 
 /**

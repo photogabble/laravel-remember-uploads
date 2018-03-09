@@ -2,7 +2,7 @@
 
 namespace Photogabble\LaravelRememberUploads;
 
-use Illuminate\Http\UploadedFile;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 class RememberedFile
 {
