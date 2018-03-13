@@ -3,8 +3,8 @@
 
 <p align="center">
   <a href="https://travis-ci.org/photogabble/laravel-remember-uploads"><img src="https://travis-ci.org/photogabble/laravel-remember-uploads.svg?branch=master" alt="Build Status"></a>
-  <a href="https://packagist.org/packages/photogabble/laravel-remember-uploads"><img src="https://poser.pugx.org/photogabble/laravel-remember-uploads/v/stable.svg" alt="Latest Stable Version"></a>
-  <a href="LICENSE"><img src="https://poser.pugx.org/photogabble/laravel-remember-uploads/license.svg" alt="License"></a>
+  <a href="https://packagist.org/packages/photogabble/laravel-remember-uploads"><img src="https://img.shields.io/packagist/v/photogabble/laravel-remember-uploads.svg" alt="Latest Stable Version"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/photogabble/laravel-remember-uploads.svg" alt="License"></a>
 </p>
 
 ## About this package
