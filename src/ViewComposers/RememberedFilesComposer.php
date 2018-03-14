@@ -2,24 +2,24 @@
 
 namespace Photogabble\LaravelRememberUploads\ViewComposers;
 
+use Illuminate\Session\Store;
 use Illuminate\View\View;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
-use Symfony\Component\HttpFoundation\FileBag;
+use Photogabble\LaravelRememberUploads\RememberedFileBag;
 
 class RememberedFilesComposer
 {
 
     /**
-     * @var \Illuminate\Session\Store
+     * @var Store
      */
     private $session;
 
     /**
      * Create a new remembered files composer.
      *
-     * @param \Illuminate\Session\Store $store
+     * @param Store $store
      */
-    public function __construct(\Illuminate\Session\Store $store)
+    public function __construct(Store $store)
     {
         $this->session = $store;
     }
@@ -32,14 +32,8 @@ class RememberedFilesComposer
      */
     public function compose(View $view)
     {
-        $fileBag = new FileBag();
-
-        if ($files = $this->session->get('_remembered_files', null)) {
-            foreach($files as $key => $file) {
-                $fileBag->set($key, new UploadedFile($file['tmpPathName'], $file['originalName'], $file['mimeType'], $file['size']));
-            }
-        }
-
-        $view->with('rememberedFiles', $fileBag);
+        /** @var RememberedFileBag $rememberedFiles */
+        $rememberedFiles = $this->session->get('_remembered_files', new RememberedFileBag());
+        $view->with('rememberedFiles', $rememberedFiles->toFileBag());
     }
 }

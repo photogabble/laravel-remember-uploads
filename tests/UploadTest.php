@@ -9,6 +9,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Session\Store;
 use Illuminate\View\View;
 use Orchestra\Testbench\TestCase;
+use Photogabble\LaravelRememberUploads\RememberedFileBag;
 use Photogabble\LaravelRememberUploads\RememberUploadsServiceProvider;
 use Photogabble\LaravelRememberUploads\ViewComposers\RememberedFilesComposer;
 use Symfony\Component\HttpFoundation\FileBag;
@@ -69,17 +70,22 @@ class UploadTest extends TestCase
         $this->assertTrue($content->ok);
         $session->ageFlashData(); // should this be required, shouldn't it happen during $this->call?
 
+        /** @var RememberedFileBag $remembered */
         $remembered = $session->get('_remembered_files');
-        $this->assertArrayHasKey('img', $remembered);
-        $this->assertEquals($file->getClientOriginalName(), $remembered['img']['originalName']);
+        $this->assertInstanceOf(RememberedFileBag::class, $remembered);
+        $this->assertTrue($remembered->has('img'));
+        $this->assertEquals($file->getClientOriginalName(), $remembered->get('img')->originalName);
 
         //
         // Test that the view composer sets the right properties
         //
+
         $viewData = $this->mockView()->getData();
         $this->assertArrayHasKey('rememberedFiles', $viewData);
-        $this->assertInstanceOf(FileBag::class, $viewData['rememberedFiles']);
-        $this->assertEquals(1, $viewData['rememberedFiles']->count());
+        /** @var FileBag $remembered */
+        $remembered = $viewData['rememberedFiles'];
+        $this->assertInstanceOf(FileBag::class, $remembered);
+        $this->assertEquals(1, $remembered->count());
 
         //
         // Test that upon re-calling the post event without any image data that
@@ -90,16 +96,94 @@ class UploadTest extends TestCase
         $this->assertTrue($response->isOk());
         $session->ageFlashData(); // should this be required, shouldn't it happen during $this-
 
-        $remembered = $session->get('_remembered_files', []);
-        $this->assertEquals([], $remembered);
+        $remembered = $session->get('_remembered_files', new RememberedFileBag());
+        $this->assertInstanceOf(RememberedFileBag::class, $remembered);
+        $this->assertEquals(0, $remembered->count());
 
         //
         // Test that the view composer sets the right properties
         //
+
         $viewData = $this->mockView()->getData();
         $this->assertArrayHasKey('rememberedFiles', $viewData);
+        /** @var FileBag $remembered */
+        $remembered = $viewData['rememberedFiles'];
+        $this->assertInstanceOf(FileBag::class, $remembered);
+        $this->assertEquals(0, $remembered->count());
+    }
+
+    /**
+     * This tests to see if the middleware correctly captures the uploaded file if the input
+     * is within an array.
+     *
+     * This test was written for issue #15.
+     * @see https://github.com/photogabble/laravel-remember-uploads/issues/15
+     */
+    public function testArrayFileUpload()
+    {
+        /** @var Store $session */
+        $session = $this->app->make(Store::class);
+
+        $remembered = $session->get('_remembered_files', []);
+        $this->assertEquals([], $remembered);
+
+        $files = [
+            $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'Stubs'.DIRECTORY_SEPARATOR.'test.jpg'),
+            $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'Stubs'.DIRECTORY_SEPARATOR.'test.jpg'),
+        ];
+
+        $response = $this->call('POST', 'test', [], [], ['img' => $files], ['Accept' => 'application/json']);
+        $this->assertTrue($response->isOk());
+        $content = json_decode($response->getContent());
+        $this->assertTrue($content->ok);
+        $session->ageFlashData();
+
+        /** @var RememberedFileBag $remembered */
+        $remembered = $session->get('_remembered_files');
+        $this->assertTrue($remembered->has('img'));
+        $this->assertTrue(is_array($remembered->get('img')));
+        $this->assertEquals($files[0]->getClientOriginalName(), $remembered->get('img')[0]->originalName);
+        $this->assertEquals($files[1]->getClientOriginalName(), $remembered->get('img')[1]->originalName);
+
+        //
+        // Test that the view composer sets the right properties
+        //
+
+        $viewData = $this->mockView()->getData();
+        $this->assertArrayHasKey('rememberedFiles', $viewData);
+
+        /** @var FileBag $remembered */
+        $remembered = $viewData['rememberedFiles'];
+
         $this->assertInstanceOf(FileBag::class, $viewData['rememberedFiles']);
-        $this->assertEquals(0, $viewData['rememberedFiles']->count());
+        $this->assertEquals(1, $remembered->count());
+        $this->assertTrue($remembered->has('img'));
+        $this->assertTrue(is_array($remembered->get('img')));
+        $this->assertEquals(2, count($remembered->get('img')));
+
+        //
+        // Test that upon re-calling the post event without any image data that
+        // the _remembered_files doesn't contain any old data.
+        //
+
+        $response = $this->call('POST', 'test', [], [], [], ['Accept' => 'application/json']);
+        $this->assertTrue($response->isOk());
+        $session->ageFlashData(); // should this be required, shouldn't it happen during $this-
+
+        $remembered = $session->get('_remembered_files', new RememberedFileBag());
+        $this->assertInstanceOf(RememberedFileBag::class, $remembered);
+        $this->assertEquals(0, $remembered->count());
+
+        //
+        // Test that the view composer sets the right properties
+        //
+
+        $viewData = $this->mockView()->getData();
+        $this->assertArrayHasKey('rememberedFiles', $viewData);
+        /** @var FileBag $remembered */
+        $remembered = $viewData['rememberedFiles'];
+        $this->assertInstanceOf(FileBag::class, $remembered);
+        $this->assertEquals(0, $remembered->count());
     }
 
     /**
@@ -164,8 +248,10 @@ class UploadTest extends TestCase
 
         $viewData = $this->mockView()->getData();
         $this->assertArrayHasKey('rememberedFiles', $viewData);
-        $this->assertInstanceOf(FileBag::class, $viewData['rememberedFiles']);
-        $this->assertEquals(1, $viewData['rememberedFiles']->count());
+        /** @var FileBag $remembered */
+        $remembered = $viewData['rememberedFiles'];
+        $this->assertInstanceOf(FileBag::class, $remembered);
+        $this->assertEquals(1, $remembered->count());
 
         // "Refresh...
 
@@ -175,10 +261,63 @@ class UploadTest extends TestCase
 
         $viewData = $this->mockView()->getData();
         $this->assertArrayHasKey('rememberedFiles', $viewData);
-        $this->assertInstanceOf(FileBag::class, $viewData['rememberedFiles']);
-        $this->assertEquals(0, $viewData['rememberedFiles']->count());
+        /** @var FileBag $remembered */
+        $remembered = $viewData['rememberedFiles'];
+        $this->assertInstanceOf(FileBag::class, $remembered);
+        $this->assertEquals(0, $remembered->count());
     }
 
+    /**
+     * This test was written for issue #15.
+     * @see https://github.com/photogabble/laravel-remember-uploads/issues/15
+     */
+    public function testArrayFileUploadOldRemembered()
+    {
+        /** @var Store $session */
+        $session = $this->app->make(Store::class);
+
+        $remembered = $session->get('_remembered_files', []);
+        $this->assertEquals([], $remembered);
+
+        $files = [
+            $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'Stubs'.DIRECTORY_SEPARATOR.'test.jpg'),
+            $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'Stubs'.DIRECTORY_SEPARATOR.'test.jpg'),
+        ];
+
+        $response = $this->call('POST', 'test', [], [], ['img' => $files], ['Accept' => 'application/json']);
+        $this->assertTrue($response->isOk());
+        $session->ageFlashData();
+
+        // "Refresh"...
+
+        $response = $this->call('POST', 'test', ['_rememberedFiles' => ['img' => [$files[0]->getClientOriginalName(), $files[1]->getClientOriginalName()]]], [], [], ['Accept' => 'application/json']);
+        $this->assertTrue($response->isOk());
+        $session->ageFlashData();
+
+        $viewData = $this->mockView()->getData();
+        $this->assertArrayHasKey('rememberedFiles', $viewData);
+        /** @var FileBag $remembered */
+        $remembered = $viewData['rememberedFiles'];
+        $this->assertInstanceOf(FileBag::class, $remembered);
+        $this->assertEquals(1, $remembered->count());
+
+        // "Refresh...
+
+        $response = $this->call('POST', 'test', [], [], [], ['Accept' => 'application/json']);
+        $this->assertTrue($response->isOk());
+        $session->ageFlashData();
+
+        $viewData = $this->mockView()->getData();
+        $this->assertArrayHasKey('rememberedFiles', $viewData);
+        /** @var FileBag $remembered */
+        $remembered = $viewData['rememberedFiles'];
+        $this->assertInstanceOf(FileBag::class, $remembered);
+        $this->assertEquals(0, $remembered->count());
+    }
+
+    /**
+     * Test the rememberedFile helper.
+     */
     public function testHelper()
     {
         /** @var Store $session */
@@ -203,7 +342,32 @@ class UploadTest extends TestCase
         $this->assertNull(rememberedFile('test'));
         $this->assertTrue(rememberedFile('test', true));
         $this->assertFalse(rememberedFile('test', false));
+    }
 
+    /**
+     * Test the rememberedFile helper.
+     * This test was extended for issue #15.
+     * @see https://github.com/photogabble/laravel-remember-uploads/issues/15
+     */
+    public function testHelperWithArray()
+    {
+        /** @var Store $session */
+        $session = $this->app->make(Store::class);
+
+        $remembered = $session->get('_remembered_files', []);
+        $this->assertEquals([], $remembered);
+
+        $files = [
+            $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'Stubs'.DIRECTORY_SEPARATOR.'test.jpg'),
+            $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'Stubs'.DIRECTORY_SEPARATOR.'test.jpg'),
+        ];
+
+        $response = $this->call('POST', 'test', [], [], ['img' => $files], ['Accept' => 'application/json']);
+        $this->assertTrue($response->isOk());
+        $session->ageFlashData();
+
+        $fileBag = rememberedFile();
+        $this->assertInstanceOf(FileBag::class, $fileBag);
     }
 
     /**
@@ -211,7 +375,7 @@ class UploadTest extends TestCase
      * Tests to check that validation being recommended in the README actually works.
      * @see https://github.com/photogabble/laravel-remember-uploads/issues/2
      */
-    public function testValidationPasses()
+    public function testSingleFileValidationPasses()
     {
         /**
          * @var \Illuminate\Routing\Router $router
@@ -247,6 +411,54 @@ class UploadTest extends TestCase
         $this->assertTrue($response->isOk());
         $content = json_decode($response->getContent());
         $this->assertEquals($file->getClientOriginalName(), $content->name);
+    }
+
+    public function testArrayFileValidationPasses()
+    {
+        /**
+         * @var \Illuminate\Routing\Router $router
+         */
+        $router = $this->app->make('router');
+        $router->post(
+            'test-validation',
+            [
+                'middleware' => ['remember.files'],
+                'uses' => '\Photogabble\LaravelRememberUploads\Tests\Stubs\ValidationTestController@arrayFileUpload'
+            ]
+        );
+
+        /** @var Store $session */
+        $session = $this->app->make(Store::class);
+
+        // Test controller validation is working.
+        $response = $this->call('POST', 'test-validation', [], [], [], ['Accept' => 'application/json']);
+        $this->assertFalse(is_null($response->exception));
+        $this->assertEquals('The given data failed to pass validation.', $response->exception->getMessage());
+        $this->assertFalse($response->isOk());
+
+        // Test controller based rememberedFile is working.
+        $files = [
+            $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'Stubs'.DIRECTORY_SEPARATOR.'test.jpg'),
+            $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'Stubs'.DIRECTORY_SEPARATOR.'test.jpg'),
+        ];
+
+        $response = $this->call('POST', 'test-validation', [], [], ['img' => $files], ['Accept' => 'application/json']);
+        $this->assertTrue(is_null($response->exception));
+        $this->assertTrue($response->isOk());
+
+        $content = json_decode($response->getContent());
+        $this->assertEquals($files[0]->getClientOriginalName(), $content->name_0);
+        $this->assertEquals($files[1]->getClientOriginalName(), $content->name_1);
+
+        $session->ageFlashData();
+        $session->flush();
+
+        // Test controller _rememberedFiles is working.
+        $response = $this->call('POST', 'test-validation', ['_rememberedFiles'=> ['img' => [$files[0]->getClientOriginalName(), $files[1]->getClientOriginalName()]]], [], [], ['Accept' => 'application/json']);
+        $this->assertTrue($response->isOk());
+        $content = json_decode($response->getContent());
+        $this->assertEquals($files[0]->getClientOriginalName(), $content->name_0);
+        $this->assertEquals($files[1]->getClientOriginalName(), $content->name_1);
     }
 
     /**
@@ -294,13 +506,59 @@ class UploadTest extends TestCase
         $this->assertTrue($response->isOk());
         $session->ageFlashData();
 
-        $remembered = $session->get('_remembered_files', []);
-        $this->assertArrayHasKey('img', $remembered);
+        /** @var RememberedFileBag $remembered */
+        $remembered = $session->get('_remembered_files', new RememberedFileBag());
+        $this->assertTrue($remembered->has(('img')));
 
         clearRememberedFiles();
 
-        $remembered = $session->get('_remembered_files', []);
-        $this->assertEquals([], $remembered);
+        /** @var RememberedFileBag $remembered */
+        $remembered = $session->get('_remembered_files', new RememberedFileBag());
+        $this->assertFalse($remembered->has(('img')));
+    }
+
+
+    /**
+     * Test written for issue #15
+     * Regression of single file upload found during 1.3.0-alpha
+     * testing by Jarosław Goszowski.
+     * @see https://github.com/photogabble/laravel-remember-uploads/issues/15
+     * @throws \Exception
+     */
+    public function testSingleFileRegressionTest()
+    {
+        /**
+         * @var \Illuminate\Routing\Router $router
+         */
+        $router = $this->app->make('router');
+        $router->post(
+            'test-controller',
+            [
+                'middleware' => ['remember.files'],
+                'uses' => '\Photogabble\LaravelRememberUploads\Tests\Stubs\TestController@store'
+            ]
+        );
+
+        $router->get('single-file-test', [
+            function(){
+                $files = rememberedFile();
+                $this->assertEquals(1, $files->count());
+                return '';
+            }
+        ]);
+
+        $file = $this->mockUploadedFile(__DIR__.DIRECTORY_SEPARATOR.'Stubs'.DIRECTORY_SEPARATOR.'test.jpg');
+        $response = $this->call('POST', 'test-controller', [], [], ['image' => $file], ['Accept' => 'application/json']);
+
+        $this->assertTrue($response->isRedirection());
+
+        $response = $this->call('GET', 'single-file-test', [], [], [], ['Accept' => 'application/json']);
+
+        if ($response->exception){
+            throw $response->exception;
+        }
+
+        $this->assertTrue($response->isOk());
     }
 
     /**
