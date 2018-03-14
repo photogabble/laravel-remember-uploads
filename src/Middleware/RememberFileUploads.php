@@ -64,7 +64,7 @@ class RememberFileUploads
     {
         $this->session = $store;
         $this->cache = $cache;
-        $this->storagePath = storage_path('app' . DIRECTORY_SEPARATOR . 'tmp-image-uploads');
+        $this->storagePath = config('remember-uploads.temporary_storage_path');
         $this->cacheTimeout = config('session.lifetime');
 
         if (! file_exists($this->storagePath)) {

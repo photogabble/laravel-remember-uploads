@@ -21,6 +21,10 @@ class RememberUploadsServiceProvider extends ServiceProvider
             '*',
             'Photogabble\LaravelRememberUploads\ViewComposers\RememberedFilesComposer'
         );
+
+        $this->publishes([
+            __DIR__.DIRECTORY_SEPARATOR.'config.php' => config_path('remember-uploads.php'),
+        ]);
     }
 
     /**
@@ -30,6 +34,10 @@ class RememberUploadsServiceProvider extends ServiceProvider
      */
     public function register()
     {
+        $this->mergeConfigFrom(
+            __DIR__.DIRECTORY_SEPARATOR.'config.php', 'remember-uploads'
+        );
+
         /** @var Router $router */
         $router =$this->app->make(Router::class);
         $router->aliasMiddleware('remember.files', RememberFileUploads::class);
