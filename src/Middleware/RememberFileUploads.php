@@ -98,7 +98,7 @@ class RememberFileUploads
      * @param array $fields
      * @return array|RememberedFile[]
      */
-    private function checkRequestForRemembered($request, array $fields)
+    private function checkRequestForRemembered(\Illuminate\Http\Request $request, array $fields): array
     {
         $remembered = $request->get('_rememberedFiles', []);
         $files = ($fields[0] === '*') ? $remembered : array_filter($remembered, function($k) use ($fields) { return in_array($k, $fields); }, ARRAY_FILTER_USE_KEY);
@@ -112,7 +112,7 @@ class RememberFileUploads
      * @param array $fields
      * @return array|RememberedFile[]
      */
-    private function remember($request, array $fields)
+    private function remember(\Illuminate\Http\Request $request, array $fields): array
     {
         $files = ($fields[0] === '*') ? $request->files : $request->only($fields);
         return $this->rememberFilesFactory($files);
@@ -125,7 +125,7 @@ class RememberFileUploads
      * @param string $prefix
      * @return array|RememberedFile[]
      */
-    private function rememberFilesFactory($files, $prefix = '')
+    private function rememberFilesFactory(array $files, string $prefix = ''): array
     {
         $result = [];
 

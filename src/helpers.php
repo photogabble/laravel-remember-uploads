@@ -14,7 +14,7 @@ if (! function_exists('rememberedFile'))
      * @param null|mixed $default
      * @return mixed|\Symfony\Component\HttpFoundation\FileBag|Illuminate\Http\UploadedFile
      */
-    function rememberedFile($key = null, $default = null) {
+    function rememberedFile(string $key = null, $default = null) {
         /** @var Illuminate\Session\Store $session */
         $session = app('session');
 

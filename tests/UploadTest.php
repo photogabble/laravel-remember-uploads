@@ -567,7 +567,7 @@ class UploadTest extends TestCase
      * @param string $stub
      * @return UploadedFile
      */
-    private function mockUploadedFile($stub) {
+    private function mockUploadedFile(string $stub): UploadedFile {
         $name = str_random(8).'.jpg';
         $path = sys_get_temp_dir().DIRECTORY_SEPARATOR.$name;
 
@@ -575,7 +575,7 @@ class UploadTest extends TestCase
         return new UploadedFile($path, $name, 'image/jpeg', null, true);
     }
 
-    private function mockView()
+    private function mockView(): View
     {
         /** @var Factory $factory */
         $factory = app(Factory::class);

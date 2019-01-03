@@ -2,6 +2,7 @@
 
 namespace Photogabble\LaravelRememberUploads\Tests\Stubs;
 
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Routing\Controller as BaseController;
@@ -12,7 +13,7 @@ class TestController extends BaseController
 {
     use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
 
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         return redirect()->back();
     }
