@@ -572,7 +572,7 @@ class UploadTest extends TestCase
         $path = sys_get_temp_dir().DIRECTORY_SEPARATOR.$name;
 
         copy($stub, $path);
-        return new UploadedFile($path, $name, filesize($path), 'image/jpeg', null, true);
+        return new UploadedFile($path, $name, 'image/jpeg', null, true);
     }
 
     private function mockView()
